@@ -1,6 +1,13 @@
-title: MultiStateRefreshLayout
-date: 2016-05-18 11:25:00
-tags: android
+---
+layout:     post                    # 使用的布局（不需要改）
+title:      MultiStateRefreshLayout               # 标题 
+subtitle:   Hello World, Hello Blog #副标题
+date:       2016-05-18             # 时间
+author:     fantianwen                      # 作者
+header-img: img/post-bg-2015.jpg    #这篇文章标题背景图片
+catalog: true                       # 是否归档
+tags:                               #标签
+    - android
 ---
 
 #### android官方的[SwipeRefreshlayout](https://developer.android.com/reference/android/support/v4/widget/SwipeRefreshLayout.html)控件不支持上拉加载，于是修改了[MultiStateView](https://github.com/Kennyc1012/MultiStateView)的部分代码，做为listView的footview，封装成了这个可以加载更多的控件，且footview的状态可以改变。

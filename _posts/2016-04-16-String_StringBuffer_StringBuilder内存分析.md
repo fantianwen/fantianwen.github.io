@@ -1,7 +1,15 @@
-title: String，StringBuffer，StringBuilder内存分析
-date: 2016-04-16 18:33:52
-tags: Java
 ---
+layout:     post                    # 使用的布局（不需要改）
+title:      String，StringBuffer，StringBuilder内存分析               # 标题 
+subtitle:   Hello World, Hello Blog #副标题
+date:       2016-04-16            # 时间
+author:     fantianwen                      # 作者
+header-img: img/post-bg-2015.jpg    #这篇文章标题背景图片
+catalog: true                       # 是否归档
+tags:                               #标签
+    - Java
+---
+
 
 
 ## 拼接字符串

@@ -1,6 +1,13 @@
-title: Kotlin Study（-）
-date: 2016-02-29 10:57:00
-tags: git
+---
+layout:     post                    # 使用的布局（不需要改）
+title:      Kotlin Study（-）               # 标题 
+subtitle:   Hello World, Hello Blog #副标题
+date:       2016-02-29             # 时间
+author:     fantianwen                      # 作者
+header-img: img/post-bg-2015.jpg    #这篇文章标题背景图片
+catalog: true                       # 是否归档
+tags:                               #标签
+    - git
 ---
 
 # 快速上手

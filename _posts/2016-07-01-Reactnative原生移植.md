@@ -1,6 +1,14 @@
-title: ReactNative原生移植
-date: 2016-07-01 10:02:00
-tags: [ReactNative,android]
+---
+layout:     post                    # 使用的布局（不需要改）
+title:      ReactNative原生移植               # 标题 
+subtitle:   Hello World, Hello Blog #副标题
+date:       2016-07-01            # 时间
+author:     fantianwen                      # 作者
+header-img: img/post-bg-2015.jpg    #这篇文章标题背景图片
+catalog: true                       # 是否归档
+tags:                               #标签
+    - ReactNative
+    - android
 ---
 
 [ReactNative原生移植](http://www.lcode.org/react-native%E7%A7%BB%E6%A4%8D%E5%8E%9F%E7%94%9Fandroid%E9%A1%B9%E7%9B%AE-%E5%B7%B2%E6%9B%B4%E6%96%B0%E7%89%88%E6%9C%AC/)
