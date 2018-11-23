@@ -1,0 +1,277 @@
+title: git多人开发
+date: 2016-01-07 18:08:05
+tags: git
+---
+
+## 创建远程分支
+现在有一个本地仓库gitskills并已经和远程仓库[git@github.com:fantianwen/gitskills.git](git@github.com:fantianwen/gitskills.git)相关联。
+### 1、创建本地分支并推送到远程分支
+>创建本地分支
+
+```bash
+I:gitskills RadAsm$ git checkout -b dev
+Switched to a new branch 'dev'
+```
+这样就创建了本地分支“dev”并切换到了“dev”分支
+
+>将本地分支`dev`推送到成为远程仓库的分支，名称为`dev`
+
+```bash
+I:gitskills RadAsm$ git push origin dev:dev
+Total 0 (delta 0), reused 0 (delta 0)
+To git@github.com:fantianwen/gitskills.git
+ * [new branch]      dev -> dev
+```
+   
+<!-- more -->
+
+>如果发现这个远程分支`dev`我不想推送了，删除这个远程分支
+
+```bash
+I:gitskills RadAsm$ git push origin :dev
+To git@github.com:fantianwen/gitskills.git
+ - [deleted]         dev
+```
+这样，这个远程分支`dev`就已经删除了。
+
+>查看远程分支有哪些
+
+```bash
+I:gitskills RadAsm$ git branch -a
+* dev
+  master
+  remotes/origin/HEAD -> origin/master
+  remotes/origin/dev
+  remotes/origin/master
+```
+可见，现在远程分支有`dev`和`master`，并且当前远程分支指针在`master`上面。
+
+### 2、他人获取你的远程仓库到本地并协同开发
+他人希望在hellgit目录下获取gitskills这个远程仓库
+>本地init
+
+```bash
+I:hellogit RadAsm$ git init
+Initialized empty Git repository in /Users/RadAsm/hellogit/.git/
+```
+
+>获取远程仓库
+
+```shell
+I:hellogit RadAsm$ git pull git@github.com:fantianwen/gitskills.git
+remote: Counting objects: 23, done.
+remote: Compressing objects: 100% (10/10), done.
+remote: Total 23 (delta 5), reused 19 (delta 4), pack-reused 0
+Unpacking objects: 100% (23/23), done.
+From github.com:fantianwen/gitskills
+ * branch            HEAD       -> FETCH_HEAD
+```
+注意使用`git pull`去获取，最好不要用`git clone`。
+
+>你希望查看当前仓库有哪些分支（当然，你也希望能够知道远程仓库有哪些分支，这样，你好切换分支）
+
+```shell
+I:hellogit RadAsm$ git branch -a
+* master
+```
+你会发现无论是`git branch`还是`git branch -a`,都只是上面的结果显示。
+
+当然，这是**协同开发**,你的上司（或者同伴）会告诉你远程仓库的分支有哪些。这时候，你的上司告诉你，远程仓库有分支`dev`
+
+>实时更新远程仓库的情况（不光是内容，还有分支等情况）pull到本地,这时候，你使用
+
+```shell
+git pull
+fatal: No remote repository specified.  Please, specify either a URL or a
+remote name from which new revisions should be fetched.
+```
+>你需要将本地仓库和远程仓库相关联
+
+```shell
+I:hellogit RadAsm$ git remote add origin git@github.com:fantianwen/gitskills.git
+```
+
+>再使用`git pull`
+
+```shell
+I:hellogit RadAsm$ git pull
+From github.com:fantianwen/gitskills
+ * [new branch]      dev        -> origin/dev
+ * [new branch]      master     -> origin/master
+There is no tracking information for the current branch.
+Please specify which branch you want to merge with.
+See git-pull(1) for details
+
+    git pull <remote> <branch>
+
+If you wish to set tracking information for this branch you can do so with:
+
+    git branch --set-upstream-to=origin/<branch> master
+
+```
+这样，你会发现远程仓库中有哪些分支，并且都已经实时更新了。
+
+>这样，你需要在远程分支上`dev`上进行开发，这样，你要做出切换
+
+```shell
+I:hellogit RadAsm$ git checkout -b dev origin/dev
+Branch dev set up to track remote branch dev from origin.
+Switched to a new branch 'dev'
+```
+
+>这样，你在本地开发完之后，就把本地`dev`推动送远程的`dev`
+
+```shell
+git push origin dev
+```
+
+
+## tag标签管理
+继续按照上面的搭建的两个本地仓库gitskills和hellogit相关联的情况下。
+
+`（所谓标签其实就是一个可以发布的一个稳定版本。）`
+
+### 1、本地tag标签(在gitskills本地仓库中)
+
+>创建本地标签
+
+```shell
+I:gitskills RadAsm$ git tag v1.1
+```
+
+这样打的tag是将最近一次`commit`的作为tag。
+
+>查看本地标签
+
+```shell
+I:gitskills RadAsm$ git tag
+v1.1
+```
+
+结果显示有一个标签。
+
+>当然，你希望把某个历史的commit打上标签
+
+```shell
+I:gitskills RadAsm$ git log --pretty=oneline --abbrev-commit
+d29f4d0 fix bug issue!
+81ff668 merge dev1 with no-ff
+7b34ae1 dev1的修改
+99eebef 分支管理策略
+7973593 confict merge
+1bdba94 master的提交
+87d4d53 branch feature1
+69f373b branch test
+c62f37e Initial commit
+```
+
+使用`git log --pretty=oneline --abbrev-commit `命令打印出所有的commit的历史信息（这个指令有点难记啊~）
+
+然后对某个历时commit打上tag，譬如我要在`1bdba94 master的提交`这个commit上打上v2.0的tag。
+
+```bash
+I:gitskills RadAsm$ git tag v2.0 1bdba94
+```
+
+然后使用git tag查看tag情况
+
+```bash
+I:gitskills RadAsm$ git tag 
+v1.1
+v2.0
+```
+
+>当然，谁知道你打上的tag包含什么样的信息，你需要为这个tag做出信息注释。
+
+```bash
+I:gitskills RadAsm$ git tag -a v3.0 -m "this is a steady tag with annotation" 7973593
+```
+
+>查看某个tag
+
+```bash
+I:gitskills RadAsm$ git show v3.0
+tag v3.0
+Tagger: RadAsm <twfan_09@hotmail.com>
+Date:   Fri Sep 25 10:06:37 2015 +0800
+
+this is a steady tag with annotation
+
+commit 79735933ead1f1c95e9c150a55ecfde2fd11f771
+Merge: 1bdba94 87d4d53
+Author: RadAsm <twfan_09@hotmail.com>
+Date:   Mon Sep 21 13:42:46 2015 +0800
+
+    confict merged
+```
+
+>删除标签
+
+```shell
+I:gitskills RadAsm$ git tag -d v1.1
+Deleted tag 'v1.1' (was d29f4d0)
+```
+
+
+### 2、将本地tag推送上远程
+>git push origin 
+
+```shell
+I:gitskills RadAsm$ git push origin v2.0
+Total 0 (delta 0), reused 0 (delta 0)
+To git@github.com:fantianwen/gitskills.git
+ * [new tag]         v2.0 -> v2.0
+```
+
+>如果希望将本地的所有的tag都推送到远程
+
+```bash
+git push origin --tags
+```
+
+>协同开发下，你的同伴在本地获取远程仓库的tag
+
+```shell
+I:hellogit RadAsm$ git pull
+remote: Counting objects: 1, done.
+remote: Total 1 (delta 0), reused 1 (delta 0), pack-reused 0
+Unpacking objects: 100% (1/1), done.
+From github.com:fantianwen/gitskills
+ * [new tag]         v3.0       -> v3.0
+Already up-to-date.
+```
+
+这样，你就获取了v3.0的tag。
+
+
+### 3、删除远程仓库中的tag
+>先将本地的该tag删除
+
+```shell
+I:gitskills RadAsm$ git tag -d v2.0
+Deleted tag 'v2.0' (was 1bdba94)
+```
+>进行远程仓库的删除
+
+```shell
+I:gitskills RadAsm$ git push origin :refs/tags/v2.0
+To git@github.com:fantianwen/gitskills.git
+ - [deleted]         v2.0
+```
+
+这样，远程的tag v2.0也删除了。
+
+>这时候，你的同伴使用`git pull`进行更新，当然，她在你删除远程tag之前进行了更新，本地已经有了tag（假设这个tag是v3.0）。你使用`git tag`进行查看
+
+```bash
+I:hellogit RadAsm$ git tag
+v1.0
+v3.0
+```
+
+你会发现，远程已经删除的v3.0本地还在。是的，你需要手动删掉tag（使用`git pull`没有效果）。
+
+
+
+
+
