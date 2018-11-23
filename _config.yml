@@ -12,13 +12,13 @@ github_repo: "" # you code repository
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
 sidebar-about-description: "A Loser In JAIST"
-sidebar-avatar: /img/photo_of_me.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-avatar: /img/me.jpeg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
 
 # SNS settings
 RSS: false
-zhihu_username:     小小小天文
+zhihu_username:     fantianwen
 github_username:    fantianwen
 
 
