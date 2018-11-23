@@ -1,7 +1,21 @@
-title: Gradle学习
-date: 2016-01-07 19:13:03
-tags: [gradle,android]
 ---
+layout:     post                    # 使用的布局（不需要改）
+title:      Gradle学习               # 标题 
+subtitle:   Hello World, Hello Blog #副标题
+date:       date: 2016-01-07 19:13:03             # 时间
+author:     BY                      # 作者
+header-img: img/post-bg-2015.jpg    #这篇文章标题背景图片
+catalog: true                       # 是否归档
+tags:                               #标签
+    - gradle
+    - android
+---
+
+作者：BYQiu
+链接：https://www.jianshu.com/p/e68fba58f75c
+來源：简书
+简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。
+
 
 ## 一、Hack one:
 ### 将android studio中Library生成的aar文件上传到本地建立的（maven）仓库中，方便今后的库文件的管理和调用
