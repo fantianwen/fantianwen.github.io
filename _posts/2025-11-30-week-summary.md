@@ -382,3 +382,217 @@ class SpreadStrategy:
 
 你的总结显示你同时在**战术层面**（交易执行）和**战略层面**（系统风险）思考问题。这很罕见且很有价值。继续保持这种思维方式！
 
+---
+
+## 多时间周期分析（Multi-Timeframe Analysis）
+
+### 核心洞察
+
+> "BTC 短期波动剧烈，但趋势在长周期可见"
+
+这是非常正确的观察！单一时间周期（如 15m）往往会产生很多假信号。
+
+### 为什么需要多时间周期？
+
+```
+短周期 (15m)：噪音多，假突破频繁
+长周期 (1h/4h)：趋势清晰，但入场点不精确
+
+结合使用 = 用长周期定方向 + 用短周期找入场点
+```
+
+### 推荐的时间周期组合
+
+| 交易风格 | 趋势周期 | 入场周期 | 精确周期 |
+|---------|---------|---------|---------|
+| 日内短线 | 1h | 15m | 5m |
+| 波段交易 | 4h | 1h | 15m |
+| 中线持仓 | 1D | 4h | 1h |
+
+**如果你目前用 15m，建议加入：**
+- **4h** — 判断主趋势方向
+- **1h** — 确认中期结构
+- **15m** — 精确入场点
+
+### 三重过滤法（Triple Screen）
+
+经典的多时间周期策略框架：
+
+```python
+class MultiTimeframeStrategy:
+    def __init__(self):
+        self.timeframes = {
+            'trend': '4h',      # 主趋势
+            'signal': '1h',     # 信号确认
+            'entry': '15m'      # 精确入场
+        }
+    
+    def analyze(self, data_4h, data_1h, data_15m):
+        """
+        三层过滤
+        """
+        # 第一层：4h 判断趋势方向
+        trend_direction = self.get_trend(data_4h)
+        # 使用 EMA20/50 或 ADX
+        
+        # 第二层：1h 寻找回调/信号
+        signal = self.get_signal(data_1h, trend_direction)
+        # 只在趋势方向寻找信号
+        
+        # 第三层：15m 精确入场
+        entry = self.get_entry(data_15m, signal)
+        # 等待确认后入场
+        
+        return {
+            'trend': trend_direction,  # UP / DOWN / NEUTRAL
+            'signal': signal,          # BUY / SELL / WAIT
+            'entry': entry             # 具体入场价格和止损
+        }
+    
+    def get_trend(self, data_4h):
+        """4h 趋势判断"""
+        ema20 = data_4h['close'].ewm(span=20).mean()
+        ema50 = data_4h['close'].ewm(span=50).mean()
+        
+        if ema20.iloc[-1] > ema50.iloc[-1] and data_4h['close'].iloc[-1] > ema20.iloc[-1]:
+            return 'UP'
+        elif ema20.iloc[-1] < ema50.iloc[-1] and data_4h['close'].iloc[-1] < ema20.iloc[-1]:
+            return 'DOWN'
+        else:
+            return 'NEUTRAL'
+    
+    def get_signal(self, data_1h, trend):
+        """1h 信号确认 - 只顺势交易"""
+        rsi = self.calculate_rsi(data_1h, 14)
+        
+        if trend == 'UP':
+            # 上涨趋势中，等待 RSI 回调到 40-50 区间
+            if 40 < rsi.iloc[-1] < 50:
+                return 'BUY_SIGNAL'
+        elif trend == 'DOWN':
+            # 下跌趋势中，等待 RSI 反弹到 50-60 区间
+            if 50 < rsi.iloc[-1] < 60:
+                return 'SELL_SIGNAL'
+        
+        return 'WAIT'
+    
+    def get_entry(self, data_15m, signal):
+        """15m 精确入场"""
+        if signal == 'WAIT':
+            return None
+        
+        # 等待 15m 级别的确认
+        # 比如：突破前高、MACD 金叉等
+        
+        entry_price = data_15m['close'].iloc[-1]
+        
+        if signal == 'BUY_SIGNAL':
+            # 止损设在 15m 近期低点下方
+            stop_loss = data_15m['low'].rolling(10).min().iloc[-1] * 0.998
+            return {
+                'action': 'BUY',
+                'entry': entry_price,
+                'stop_loss': stop_loss,
+                'risk': (entry_price - stop_loss) / entry_price
+            }
+        
+        return None
+```
+
+### 实际操作流程
+
+```
+Step 1: 查看 4h 图
+        │
+        ├── 趋势向上 → 只找做多机会
+        ├── 趋势向下 → 只找做空机会
+        └── 震荡     → 等待或降低仓位
+
+Step 2: 切换到 1h 图
+        │
+        └── 等待价格回调到支撑/阻力区
+            或等待指标进入超买/超卖区
+
+Step 3: 切换到 15m 图
+        │
+        └── 等待入场信号确认
+            (突破、反转K线、指标背离等)
+
+Step 4: 入场并设置止损
+        │
+        └── 止损基于 15m 结构
+            止盈基于 1h/4h 结构
+```
+
+### 15m 策略优化建议
+
+**现状问题：**
+- 15m 上 BTC 波动剧烈，容易被洗出
+- 可能频繁触发假信号
+
+**优化方案：**
+
+```python
+def enhanced_entry_logic(data_15m, data_1h, data_4h):
+    """
+    增强的入场逻辑
+    """
+    # 1. 首先检查 4h 趋势
+    trend_4h = get_trend(data_4h)
+    
+    if trend_4h == 'NEUTRAL':
+        return {'action': 'SKIP', 'reason': '4h无明确趋势'}
+    
+    # 2. 检查 1h 是否在关键位置
+    near_support = is_near_support(data_1h)
+    near_resistance = is_near_resistance(data_1h)
+    
+    # 3. 只有当长周期条件满足时，才看 15m 信号
+    signal_15m = get_your_15m_signal(data_15m)  # 你现有的指标逻辑
+    
+    # 4. 多层确认
+    if trend_4h == 'UP' and near_support and signal_15m == 'BUY':
+        return {
+            'action': 'BUY',
+            'confidence': 'HIGH',
+            'reason': '4h上涨 + 1h支撑 + 15m买入信号'
+        }
+    
+    if trend_4h == 'UP' and signal_15m == 'BUY':
+        return {
+            'action': 'BUY',
+            'confidence': 'MEDIUM',
+            'reason': '4h上涨 + 15m买入信号，但未在支撑位'
+        }
+    
+    # 逆势信号 = 高风险
+    if trend_4h == 'DOWN' and signal_15m == 'BUY':
+        return {
+            'action': 'SKIP',
+            'reason': '15m买入信号与4h趋势冲突'
+        }
+    
+    return {'action': 'WAIT'}
+```
+
+### 关键指标在不同周期的用法
+
+| 指标 | 4h 用途 | 1h 用途 | 15m 用途 |
+|------|--------|--------|---------|
+| **EMA** | 趋势方向 (20/50) | 动态支撑阻力 | 入场触发 |
+| **RSI** | 极端值警告 | 回调确认 | 背离信号 |
+| **MACD** | 趋势强度 | 动量变化 | 金叉/死叉入场 |
+| **布林带** | 波动率状态 | 回归交易 | 突破确认 |
+| **成交量** | 趋势确认 | 突破有效性 | 入场确认 |
+
+### 多时间周期总结
+
+**实操建议：**
+
+1. **加入 4h 过滤器** — 只在 4h 趋势明确时交易
+2. **加入 1h 确认** — 等待回调到关键位置
+3. **15m 精确入场** — 用你现有的指标，但只在长周期确认后执行
+4. **止损用 15m，止盈用 1h/4h** — 小止损，大目标
+
+这样可以显著减少假信号，提高胜率和盈亏比。
+
