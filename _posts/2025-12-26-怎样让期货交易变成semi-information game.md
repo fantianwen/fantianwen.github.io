@@ -343,7 +343,170 @@ def calculate_volume_profile(ohlcv_data, bins=50):
 - **持仓量 (OI)**：市场参与度
 - **清算数据**：潜在的连锁反应
 
-### 3.3 宏观指标
+### 3.3 期权市场指标：GEX 和 Skew
+
+期权市场对现货/期货价格有**结构性影响**，这是很多交易者忽略的重要信息源。
+
+#### GEX (Gamma Exposure)：决定波动性
+
+**Gamma** 是期权 Delta 对价格变化的敏感度。**GEX** 是所有未平仓期权的 Gamma 加权总和。
+
+**核心机制：**
+- 做市商为了保持 Delta 中性，需要在价格变动时**对冲**
+- 当 GEX 为正时，做市商是**净卖出期权**（Short Gamma）
+- 当 GEX 为负时，做市商是**净买入期权**（Long Gamma）
+
+**GEX 对价格的影响：**
+
+| GEX 状态 | 做市商行为 | 价格影响 | 市场特征 |
+|---------|-----------|---------|---------|
+| **正 GEX** | 价格涨 → 买入对冲<br>价格跌 → 卖出对冲 | **阻尼效应**（抑制波动） | 价格被"粘住"，难以突破 |
+| **负 GEX** | 价格涨 → 卖出对冲<br>价格跌 → 买入对冲 | **加速效应**（放大波动） | 价格容易快速移动 |
+
+**实战应用：**
+```python
+def analyze_gex(option_data):
+    """
+    option_data: 包含所有未平仓期权的数据
+    每个期权: strike, expiry, type (call/put), open_interest, gamma
+    """
+    total_gex = 0
+    
+    for option in option_data:
+        # Gamma Exposure = Gamma × Open Interest × 100 (每手100股)
+        gex = option['gamma'] * option['open_interest'] * 100
+        
+        # Call 的 GEX 为正，Put 的 GEX 为负（通常）
+        if option['type'] == 'call':
+            total_gex += gex
+        else:
+            total_gex -= gex
+    
+    return {
+        'total_gex': total_gex,
+        'effect': 'DAMPENING' if total_gex > 0 else 'ACCELERATING',
+        'volatility_expectation': 'LOW' if total_gex > 0 else 'HIGH'
+    }
+```
+
+#### Skew：决定情绪方向
+
+**Skew** 衡量**看跌期权 (Put)** 和**看涨期权 (Call)** 的隐含波动率差异。
+
+**计算方法：**
+- **Put-Call Skew** = IV(Put) - IV(Call)
+- 或使用 **25 Delta Skew** = IV(25Δ Put) - IV(25Δ Call)
+
+**Skew 的含义：**
+
+| Skew 状态 | 市场情绪 | 解释 |
+|----------|---------|------|
+| **正 Skew** | **看跌情绪** | Put 的 IV 高于 Call，市场担心下跌 |
+| **负 Skew** | **看涨情绪** | Call 的 IV 高于 Put，市场预期上涨 |
+
+**实战应用：**
+```python
+def calculate_skew(option_chain):
+    """
+    option_chain: 期权链数据
+    """
+    # 计算相同到期日、相同 Delta 的 Put 和 Call 的 IV
+    puts_iv = [opt['iv'] for opt in option_chain if opt['type'] == 'put' and opt['delta'] == -0.25]
+    calls_iv = [opt['iv'] for opt in option_chain if opt['type'] == 'call' and opt['delta'] == 0.25]
+    
+    if puts_iv and calls_iv:
+        skew = np.mean(puts_iv) - np.mean(calls_iv)
+        return {
+            'skew': skew,
+            'sentiment': 'BEARISH' if skew > 0 else 'BULLISH',
+            'fear_level': abs(skew)  # Skew 绝对值越大，情绪越极端
+        }
+    return None
+```
+
+#### GEX × Skew 四象限模型
+
+**组合使用 GEX 和 Skew 可以预测价格行为：**
+
+```
+        Skew (情绪方向)
+            ↑
+            |
+  看跌情绪  |  看涨情绪
+            |
+    ────────┼────────→
+            |        GEX (波动性)
+            |      (阻尼/加速)
+            |
+```
+
+**四个象限：**
+
+| 象限 | GEX | Skew | 价格行为 | 交易策略 |
+|------|-----|------|---------|---------|
+| **象限 1** | 正（阻尼） | 正（看跌） | **横盘或受阻** | 等待突破，或做空 |
+| **象限 2** | 正（阻尼） | 负（看涨） | **横盘或缓慢上涨** | 逢低买入，耐心持有 |
+| **象限 3** | 负（加速） | 正（看跌） | **快速下跌（危险）** | 减仓/做空，设置止损 |
+| **象限 4** | 负（加速） | 负（看涨） | **快速上涨（强势）** | 追涨或持有，但注意回调 |
+
+**实战代码：**
+```python
+def gex_skew_quadrant(gex_value, skew_value):
+    """
+    判断当前市场处于哪个象限
+    """
+    if gex_value > 0 and skew_value > 0:
+        return {
+            'quadrant': 1,
+            'description': '阻尼 + 看跌 = 横盘或受阻',
+            'action': 'WAIT_OR_SHORT',
+            'risk': 'MEDIUM'
+        }
+    elif gex_value > 0 and skew_value < 0:
+        return {
+            'quadrant': 2,
+            'description': '阻尼 + 看涨 = 横盘或缓慢上涨',
+            'action': 'BUY_ON_DIP',
+            'risk': 'LOW'
+        }
+    elif gex_value < 0 and skew_value > 0:
+        return {
+            'quadrant': 3,
+            'description': '加速 + 看跌 = 快速下跌（危险）',
+            'action': 'REDUCE_POSITION_OR_SHORT',
+            'risk': 'HIGH'
+        }
+    else:  # gex < 0 and skew < 0
+        return {
+            'quadrant': 4,
+            'description': '加速 + 看涨 = 快速上涨（强势）',
+            'action': 'RIDE_TREND_BUT_WATCH_REVERSAL',
+            'risk': 'MEDIUM_HIGH'
+        }
+```
+
+**关键洞察：**
+
+1. **GEX 决定波动性**
+   - 正 GEX = 阻尼（抑制波动）
+   - 负 GEX = 加速（放大波动）
+
+2. **Skew 决定情绪方向**
+   - 正 Skew = 看跌情绪
+   - 负 Skew = 看涨情绪
+
+3. **组合决定价格行为**
+   - 象限 1：阻尼 + 看跌 = 横盘或受阻
+   - 象限 2：阻尼 + 看涨 = 横盘或缓慢上涨
+   - 象限 3：加速 + 看跌 = 快速下跌（危险）
+   - 象限 4：加速 + 看涨 = 快速上涨（强势）
+
+**数据来源：**
+- **Deribit**：BTC/ETH 期权数据最全
+- **Laevitas**：提供 GEX 和 Skew 的可视化
+- **Greeks.live**：实时 Gamma 和 Skew 数据
+
+### 3.4 宏观指标
 
 - **美元指数 (DXY)**：风险资产的反向指标
 - **利率预期**：影响资金成本
@@ -432,7 +595,11 @@ class SemiInformationTradingSystem:
 
 1. **K线指标层**：EMA21/55/200, VWAP, Volume - 提供趋势方向
 2. **Orderbook Flow 层**：CVD, Footprint, Heatmap, Volume Profile - 提供精确入场点
-3. **场外指标层**：链上数据、衍生品数据、宏观数据 - 提供市场背景
+3. **场外指标层**：
+   - 链上数据：交易所流入流出、稳定币变化
+   - 衍生品数据：资金费率、持仓量、清算数据
+   - **期权市场数据**：GEX（波动性）、Skew（情绪方向）- 预测价格行为
+   - 宏观数据：DXY、利率、监管消息
 
 **关键洞察：**
 
